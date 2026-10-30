@@ -1,0 +1,10 @@
+title = "Portfolio secret checks"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "google-api-key-strict"
+description = "Google API key, including browser keys embedded in URLs"
+regex = '''AIza[0-9A-Za-z_-]{35}'''
+keywords = ["AIza"]
