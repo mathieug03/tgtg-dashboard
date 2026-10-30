@@ -12,7 +12,7 @@ Personal automation project exploring API clients, background workers, and reser
 - Optional Telegram notifications and explicit commands.
 - A durable reservation journal and offline tests for response handling, session rotation, and uncertain order states.
 
-The interesting engineering work is handling stale credentials and ambiguous requests: receipts are saved before success notifications, and uncertain order responses require checking the official app rather than blindly retrying.
+Session refresh is serialized to avoid stale credentials. Reservation receipts are saved before success notifications; uncertain order responses require checking the official app rather than blindly retrying.
 
 ## Run on your own computer
 
@@ -31,7 +31,7 @@ This application has **no dashboard-user authentication** and stores a local ser
 
 It uses unofficial endpoints; upstream changes or blocking can break login, discovery, and reservation behavior. No availability, checkout, or anti-blocking guarantee is made.
 
-No saved login, cookies, account records, favorites snapshot, real order history, Telegram credentials, or legacy patch archive is included. The optional notebook ships with outputs cleared and network actions disabled by default. Supply your own credentials locally; never commit `temp.json`, `.env`, or runtime data.
+Supply your own credentials locally and keep `temp.json`, `.env`, and runtime data private. Network actions in the optional notebook are disabled by default.
 
 ## Offline checks
 
@@ -44,4 +44,4 @@ These use fake credentials and mocked responses. They do not validate live upstr
 
 ## Credits
 
-Portfolio maintained by Mathieu Gautier. The client work was informed by the upstream [tgtg-python project](https://github.com/ahivert/tgtg-python), including [PR #378](https://github.com/ahivert/tgtg-python/pull/378). Map tiles use OpenStreetMap with attribution retained in the interface. Team, upstream, and bundled dependency rights remain with their authors; this archive does not assert a new blanket license over them.
+Developed by Mathieu Gautier. The client implementation draws on the upstream [tgtg-python project](https://github.com/ahivert/tgtg-python), including [PR #378](https://github.com/ahivert/tgtg-python/pull/378). Map tiles use OpenStreetMap, with attribution in the interface.
