@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TooGoodToGo Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/styles.css?v=session-bot-5">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <div class="logo-icon">🛍️</div>
+                <h2>TGTG Interface</h2>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-target="view-welcome">
+                    <span class="icon">🏠</span>
+                    <span>Welcome</span>
+                </li>
+                <li data-target="view-items">
+                    <span class="icon">🔍</span>
+                    <span>Discover</span>
+                </li>
+                <li data-target="view-favorites">
+                    <span class="icon">❤️</span>
+                    <span>Favorites</span>
+                </li>
+                <li data-target="view-orders">
+                    <span class="icon">📦</span>
+                    <span>Orders</span>
+                </li>
+                <li data-target="view-sniper">
+                    <span class="icon">🎯</span>
+                    <span>Auto-Sniper</span>
+                </li>
+                <li data-target="view-auth">
+                    <span class="icon">⚙️</span>
+                    <span>Authentication</span>
+                </li>
+            </ul>
+
+            <div class="status-indicator">
+                <div class="status-dot" id="auth-status-dot"></div>
+                <span id="auth-status-text">Checking Auth...</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content-area">
+
+            <!-- Welcome View -->
+            <section id="view-welcome" class="view">
+                <header class="location-heading">
+                    <span class="location-eyebrow">GOOD FOOD, CLOSE BY</span>
+                    <h1>Find your next surprise.</h1>
+                    <p>Choose a neighborhood. Discover bags worth saving.</p>
+                </header>
+                <div class="location-panel">
+                    <div class="location-toolbar">
+                        <div><h2>Where are you looking?</h2><p>Click anywhere on the map or drag the pin.</p></div>
+                        <button type="button" class="btn location-locate" id="locate-me">◎ &nbsp; Use my location</button>
+                    </div>
+                    <p id="map-status" role="status" class="map-status"></p>
+                    <div class="location-map-frame">
+                        <div id="map" aria-label="Choose the center of your bag search"></div>
+                        <span class="location-map-label">SEARCH WITHIN 5 KM</span>
+                    </div>
+                    <div class="location-selection">
+                        <div><span class="location-caption">Your search location</span><strong id="coord-display">Paris · 48.8566, 2.3522</strong></div>
+                        <button class="btn location-discover" onclick="switchView('view-items')">Discover bags here <span aria-hidden="true">→</span></button>
+                    </div>
+                    <details class="location-coordinates" id="location-coordinates">
+                        <summary>Enter exact coordinates</summary>
+                        <form id="coordinate-form">
+                            <label for="location-lat">Latitude<input id="location-lat" type="number" min="-90" max="90" step="any" value="48.8566" required></label>
+                            <label for="location-lng">Longitude<input id="location-lng" type="number" min="-180" max="180" step="any" value="2.3522" required></label>
+                            <button class="btn btn-secondary" type="submit">Set location</button>
+                        </form>
+                    </details>
+                </div>
+                <p class="location-footnote">Your location stays selected for your next visit. Bags load when you’re ready.</p>
+            </section>
+
+            <!-- Auth View -->
+            <section id="view-auth" class="view hidden">
+                <div class="header sticky-header">
+                    <h1>Authentication</h1>
+                    <p>Connect your TooGoodToGo account to fetch items and reserve bags.</p>
+                </div>
+
+                <div class="auth-card glass-panel">
+                    <div id="auth-step-1">
+                        <h3>Login with Email</h3>
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="auth-email" placeholder="your.email@example.com">
+                        </div>
+                        <button class="btn btn-primary" id="btn-request-pin">Send PIN</button>
+                    </div>
+
+                    <div id="auth-step-2" class="hidden">
+                        <h3>Enter Verification PIN</h3>
+                        <p style="color:var(--text-muted); margin-bottom: 1rem; font-size:0.9rem;">We sent a code to
+                            your email. Check it on your phone or computer.</p>
+                        <div class="input-group">
+                            <label>PIN Code</label>
+                            <input type="text" id="auth-pin" placeholder="123456" maxlength="6">
+                        </div>
+                        <button class="btn btn-primary" id="btn-verify-pin">Verify & Connect</button>
+                    </div>
+
+                    <div id="auth-success" class="hidden success-state">
+                        <div class="success-icon" style="font-size:3rem; margin-bottom:1rem;">✨</div>
+                        <h3>Successfully Connected!</h3>
+                        <p style="color:var(--text-muted);">Your session refreshes automatically before use when its token is near expiry.</p>
+                        <p id="auth-session-info" role="status" style="margin-top: 1rem; color: var(--text-muted);"></p>
+                        <button type="button" class="btn btn-primary" id="btn-refresh-session" style="margin-top: 1rem" onclick="refreshSession()">Refresh session</button>
+                        <button type="button" class="btn btn-secondary" style="margin-top: 1rem" onclick="reconnectAccount()">Reconnect account</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Items View -->
+            <section id="view-items" class="view hidden">
+                <div class="header sticky-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div class="title-row">
+                            <h1>Discover Bags</h1>
+                            <button class="btn btn-secondary btn-refresh" onclick="fetchItems(true)">Refresh 🔄</button>
+                        </div>
+                        <p>Available surprise bags near your selected location.</p>
+                    </div>
+                    <div class="filters" style="display: flex; gap: 1rem;">
+                        <select id="filter-avail-items" onchange="applyFilters('items')" style="background: var(--surface); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; outline: none;">
+                            <option value="all">All Availability</option>
+                            <option value="available">Available Only</option>
+                            <option value="soldout">Sold Out Only</option>
+                        </select>
+                        <select id="filter-price-items" onchange="applyFilters('items')" style="background: var(--surface); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; outline: none;">
+                            <option value="all">Any Price</option>
+                            <option value="under5">Under 5.00</option>
+                            <option value="under10">Under 10.00</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-container" id="items-grid">
+                    <!-- Cards injected here -->
+                    <div class="loader hidden" id="items-loader">Loading...</div>
+                </div>
+            </section>
+
+            <!-- Favorites View -->
+            <section id="view-favorites" class="view hidden">
+                <div class="header sticky-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div class="title-row">
+                            <h1>Your Favorites</h1>
+                            <button class="btn btn-secondary btn-refresh" onclick="fetchFavorites(true)">Refresh 🔄</button>
+                        </div>
+                        <p>Bags you've saved in the app. This list is cached; Refresh checks your current session.</p>
+                    </div>
+                    <div class="filters" style="display: flex; gap: 1rem;">
+                        <select id="filter-avail-favs" onchange="applyFilters('favorites')" style="background: var(--surface); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; outline: none;">
+                            <option value="all">All Availability</option>
+                            <option value="available">Available Only</option>
+                            <option value="soldout">Sold Out Only</option>
+                        </select>
+                        <select id="filter-price-favs" onchange="applyFilters('favorites')" style="background: var(--surface); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 8px; outline: none;">
+                            <option value="all">Any Price</option>
+                            <option value="under5">Under 5.00</option>
+                            <option value="under10">Under 10.00</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-container" id="favorites-grid">
+                    <!-- Cards injected here -->
+                    <div class="loader hidden" id="fav-loader">Loading...</div>
+                </div>
+            </section>
+
+            <!-- Orders View -->
+            <section id="view-orders" class="view hidden">
+                <div class="header sticky-header">
+                    <div class="title-row">
+                        <h1>Recent Orders</h1>
+                    </div>
+                    <p>Track bags reserved in this session (Auto cancels in 4 mins).</p>
+                </div>
+
+                <div class="grid-container" id="orders-grid">
+                    <!-- Cards injected here -->
+                </div>
+            </section>
+
+            <!-- Sniper View -->
+            <section id="view-sniper" class="view hidden">
+                <div class="header sticky-header">
+                    <div class="title-row">
+                        <h1>Auto-Sniper Bot</h1>
+                    </div>
+                    <p>Track bags and snipe them autonomously when they drop.</p>
+                </div>
+
+                <div class="grid-container" id="sniper-grid">
+                    <!-- Cards injected here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Sniper Modal -->
+    <div id="sniper-modal" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width: 400px; margin: 0 auto;">
+            <h2>Configure Sniper</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">Set an optional drop time. The bot sleeps securely until 30 seconds before!</p>
+            
+            <div class="input-group">
+                <label>Target Drop Time (Optional)</label>
+                <input type="time" id="sniper-time" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.75rem; color: white;">
+                <small style="color:var(--text-muted); display: block; margin-top: 0.5rem;">Leave empty to start watching immediately.</small>
+            </div>
+            
+            <input type="hidden" id="sniper-item-id">
+            
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="closeSnipeModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-snipe" onclick="confirmSnipe()" style="flex:1;">Launch Bot <span class="target-icon">🎯</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/script.js?v=session-bot-5"></script>
+    <script src="/map.js?v=session-bot-5"></script>
+</body>
+
+</html>
